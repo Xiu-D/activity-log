@@ -1,6 +1,6 @@
 {
 	"name": "activity-log",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "module",
 	"dependencies": {
 		"@actions/core": "^3.0.1",
