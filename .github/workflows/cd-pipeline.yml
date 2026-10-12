@@ -70,6 +70,16 @@ jobs:
           NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           gh release create "$TAG" build.zip --notes "$NOTE"
+
+      - name: Notify release (commit comment)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: prod-v${{ needs.build.outputs.version }}
+          SHA: ${{ github.sha }}
+        run: |
+          gh api "repos/$GH_REPO/commits/$SHA/comments" -f body="Released $TAG to production (run #${{ github.run_number }})"
+
   release-notes-agent:
     needs: [build, deploy-staging]
     runs-on: ubuntu-latest
