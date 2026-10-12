@@ -1,5 +1,7 @@
 name: CI Dev Deployment
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -39,7 +41,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ vars.BUILD_TAG }}
+          TAG: ${{ vars.BUILD_TAG }}-${{ github.run_number }}
           NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           gh release create "$TAG" build.zip --notes "$NOTE"
