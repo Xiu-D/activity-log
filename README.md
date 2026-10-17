@@ -1,5 +1,11 @@
 <h1 align="center" id="title">Activity Log</h1>
 
+
+<p align="center">
+    <a href="https://github.com/Xiu-D/activity-log/actions/workflows/ci-dev.yml"><img src="https://github.com/Xiu-D/activity-log/actions/workflows/ci-dev.yml/badge.svg" alt="CI Dev Deployment"></a>
+    <a href="https://github.com/Xiu-D/activity-log/actions/workflows/cd-pipeline.yml"><img src="https://github.com/Xiu-D/activity-log/actions/workflows/cd-pipeline.yml/badge.svg" alt="CI/CD Deployment Pipeline"></a>
+</p>
+
 ![activity log](https://socialify.git.ci/TheDanniCraft/activity-log/image?forks=1&issues=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F66677362&name=1&owner=1&pattern=Solid&pulls=1&stargazers=1&theme=Auto)
 
 <p align="center">

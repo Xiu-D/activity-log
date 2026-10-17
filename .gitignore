@@ -1,3 +1,7 @@
 setEnv.bat
 
 node_modules
+
+# test reports
+junit.xml
+lcov.info

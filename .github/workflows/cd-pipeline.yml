@@ -32,11 +32,19 @@ jobs:
   test-unit:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
     env:
       TEST_ENV: staging
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -44,10 +52,20 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests with Coverage
         run: |
+          echo "Node version: $(node -v)"
           echo "Running unit tests (TEST_ENV=$TEST_ENV)..."
-          npm run test:unit
+          npm run test:coverage
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-node${{ matrix.node }}
+          path: |
+            junit.xml
+            lcov.info
 
   test-integration:
     needs: test-unit
@@ -173,3 +191,70 @@ jobs:
         with:
           name: ai-release-notes
           path: release-notes.md
+
+
+  notify-test-failure:
+    needs: [test-unit, test-integration]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create GitHub Issue for failed tests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          gh issue create \
+            --title "❌ Automated tests failed in pipeline run #$RUN_NUMBER" \
+            --body "## Test Failure Report
+
+          The CI/CD pipeline stopped because automated tests failed. **No deployment was made.**
+
+          | Item | Value |
+          |---|---|
+          | Run | [#$RUN_NUMBER]($RUN_URL) |
+          | Commit | \`$SHA\` |
+          | Triggered by | @$ACTOR |
+
+          Download the **test-reports** artifacts from the run page to see the JUnit and coverage reports."
+
+
+  notify-test-results:
+    needs: [test-unit, test-integration]
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Test Reports (Node 24)
+        uses: actions/download-artifact@v4
+        with:
+          name: test-reports-node24
+
+      - name: Post test results as commit comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          COVERAGE=$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{ if (lf>0) printf "%.2f", lh*100/lf; else print "0" }' lcov.info)
+          TESTS=$(grep -c '<testcase' junit.xml)
+          FAILS=$(grep -c '<failure' junit.xml || true)
+
+          BODY="## ✅ Automated Test Results (run #$RUN_NUMBER)
+
+          | Item | Result |
+          |---|---|
+          | Unit tests | $TESTS run, $FAILS failed |
+          | Node versions | 22, 24 |
+          | Integration tests | staging, prod passed |
+          | Line coverage | $COVERAGE% (threshold 80%) |"
+
+          echo "$BODY" >> "$GITHUB_STEP_SUMMARY"
+          gh api "repos/$GH_REPO/commits/$SHA/comments" -f body="$BODY"
