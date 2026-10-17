@@ -25,8 +25,35 @@ jobs:
           name: build-artifact
           path: build.zip
 
-  deploy-dev:
+  test:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Check Artifact Contents
+        run: unzip -l build.zip
+
+      - name: Run Automated Tests
+        run: |
+          echo "Running automated tests..."
+          npm test || (echo "❌ Tests failed" && exit 1)
+          echo "✅ All tests passed"
+
+  deploy-dev:
+    needs: test
     runs-on: ubuntu-latest
     environment: dev
     permissions:
