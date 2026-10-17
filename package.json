@@ -1,6 +1,6 @@
 {
 	"name": "activity-log",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"type": "module",
 	"dependencies": {
 		"@actions/core": "^3.0.1",
@@ -14,7 +14,9 @@
 		"watch": "ncc build src/index.js --watch --license licenses.txt",
 		"build": "bun install && bunx ncc build src/index.js --license licenses.txt",
 		"lint:commit": "commitlint --last --verbose",
-		"test": "node test/mock.test.js"
+		"test": "node test/mock.test.js",
+		"test:unit": "node --test test/unit/math.test.js",
+		"test:integration": "node --test test/integration/build.test.js"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^21.2.3",

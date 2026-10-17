@@ -29,8 +29,60 @@ jobs:
           name: build-artifact
           path: build.zip
 
-  deploy-staging:
+  test-unit:
     needs: build
+    runs-on: ubuntu-latest
+    env:
+      TEST_ENV: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Run Unit Tests
+        run: |
+          echo "Running unit tests (TEST_ENV=$TEST_ENV)..."
+          npm run test:unit
+
+  test-integration:
+    needs: test-unit
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test_env: [staging, prod]
+    env:
+      TEST_ENV: ${{ matrix.test_env }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Unpack Build Artifact
+        run: unzip -o build.zip
+
+      - name: Run Integration Tests
+        run: |
+          echo "Running integration tests (TEST_ENV=$TEST_ENV)..."
+          npm run test:integration
+
+
+  deploy-staging:
+    needs: [build, test-integration]
     runs-on: ubuntu-latest
     environment: staging
     permissions:
